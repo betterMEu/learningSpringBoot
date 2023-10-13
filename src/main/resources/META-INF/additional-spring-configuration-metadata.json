@@ -1,0 +1,10 @@
+{"properties": [
+  {
+    "name": "test.property.addresses",
+    "defaultValue": ["a", "b", "c"]
+  },
+  {
+    "name": "test.property.container-type",
+    "defaultValue": "simple"
+  }
+]}
