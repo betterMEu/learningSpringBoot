@@ -1,14 +1,10 @@
 server:
   port: 9000
-  servlet:
-    encoding:
-      charset: utf-8
-      enabled: true
-      force: true
-
-
-
-
+#  servlet:
+#    encoding:
+#      charset: utf-8
+#      enabled: true
+#      force: true
 
 ######################## 自定义配置  双@@中间是引用pom文件 ###################
 app:
@@ -31,7 +27,6 @@ spring:
     resources:
       cache:
         period: 31556926 # 一年
-  ###################### HTTP #####################
 
   ###################### DATASOURCE #####################
   datasource:
@@ -40,6 +35,7 @@ spring:
     username: root
     password: 123456
 
+  ###################### 启动配置 #####################
   main:
     banner-mode: "console"
     lazy-initialization: true # 懒加载-Bean在需要时被创建，而不是在应用程序启动时就创建

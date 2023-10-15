@@ -14,9 +14,12 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.SessionManagementConfigurer;
 import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.provisioning.JdbcUserDetailsManager;
+import org.springframework.security.provisioning.UserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.authentication.logout.HeaderWriterLogoutHandler;
@@ -48,21 +51,40 @@ public class SecurityConfig {
 
     /**
      * 定义多个认证用户（可以定义一个用户，如下一个例子）
-     *
      * @return 内存型用户密码校验
      */
+//    @Bean
+//    @ConditionalOnMissingBean(UserDetailsService.class)
+//    public InMemoryUserDetailsManager inMemoryUserDetailsManager(BCryptPasswordEncoder passwordEncoder) {
+//        String defaultPassword = "yls";
+//        return new InMemoryUserDetailsManager(
+//                User.withUsername("user")
+//                        .password(passwordEncoder.encode(defaultPassword))
+//                        .roles("ROLES_USER").build(),
+//                User.withUsername("admin")
+//                        .password(passwordEncoder.encode(defaultPassword))
+//                        .roles("ROLES_ADMIN").build()
+//        );
+//    }
+
     @Bean
-    @ConditionalOnMissingBean(UserDetailsService.class)
-    public InMemoryUserDetailsManager inMemoryUserDetailsManager(BCryptPasswordEncoder passwordEncoder) {
-        String defaultPassword = "yls";
-        return new InMemoryUserDetailsManager(
-                User.withUsername("user")
-                        .password(passwordEncoder.encode(defaultPassword))
-                        .roles("ROLES_USER").build(),
-                User.withUsername("admin")
-                        .password(passwordEncoder.encode(defaultPassword))
-                        .roles("ROLES_ADMIN").build()
-        );
+    UserDetailsManager users(DataSource dataSource,BCryptPasswordEncoder passwordEncoder) {
+        UserDetails user = User.builder()
+                .username("user")
+                .password(passwordEncoder.encode("yls"))
+                .roles("USER")
+//                .disabled(Boolean.FALSE)
+                .build();
+        UserDetails admin = User.builder()
+                .username("admin")
+                .password(passwordEncoder.encode("yls"))
+                .roles("USER", "ADMIN")
+                .disabled(Boolean.TRUE)
+                .build();
+        JdbcUserDetailsManager users = new JdbcUserDetailsManager(dataSource);
+        users.updateUser(user);
+        users.updateUser(admin);
+        return users;
     }
 
 //    @Bean
@@ -108,6 +130,9 @@ public class SecurityConfig {
         return new RememberMeAuthenticationFilter(authenticationManager, rememberMeServices);
     }
 
+    /**
+     * DaoAuthenticationProvider 是一个 AuthenticationProvider 的实现，它使用 UserDetailsService 和 PasswordEncoder 来验证一个用户名和密码
+     */
     @Bean
     public AuthenticationManager authenticationManager(UserDetailsService userDetailsService) {
         DaoAuthenticationProvider daoAuthenticationProvider = new DaoAuthenticationProvider();
@@ -131,9 +156,10 @@ public class SecurityConfig {
                                                    RememberMeServices rememberMeServices) throws Exception {
         http
                 .csrf(Customizer.withDefaults())
+                .formLogin(Customizer.withDefaults())
+//                .loginPage("/login").permitAll().and()
                 .authorizeHttpRequests(author -> author.anyRequest().authenticated())
                 .httpBasic(Customizer.withDefaults())
-                .formLogin(Customizer.withDefaults())
                 .securityContext(securityContext -> securityContext
                                 // security-securityContext默认配置
                                 .securityContextRepository(new DelegatingSecurityContextRepository(
@@ -154,6 +180,8 @@ public class SecurityConfig {
                 .logout(logout -> logout
                         .addLogoutHandler(new HeaderWriterLogoutHandler(new ClearSiteDataHeaderWriter(COOKIES))) //注销时，清除用户网站的cookies（目的是删除session）
                 );
+
+
 
         return http.build();
     }
