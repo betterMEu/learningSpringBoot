@@ -23,10 +23,12 @@ import java.io.IOException;
 @Component
 public class CustomAccessDenied implements AccessDeniedHandler {
 
+    private static final String ERROR = "/error";
+
     @Override
     public void handle(HttpServletRequest request, HttpServletResponse response, AccessDeniedException accessDeniedException) throws IOException, ServletException {
         // 设置403状态码和自定义的错误页面
         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-        response.sendRedirect("/error/403");
+        response.sendRedirect(ERROR + "/403");
     }
 }

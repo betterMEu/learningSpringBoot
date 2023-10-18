@@ -2,6 +2,7 @@ package one.two.three.config;
 
 import jakarta.annotation.Resource;
 import one.two.three.components.security.accessDeniedHandler.CustomAccessDenied;
+import one.two.three.components.security.author.OpenPolicyAgentAuthorizationManager;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -10,6 +11,7 @@ import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.authorization.AuthorizationManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -22,6 +24,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.provisioning.UserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.authentication.logout.HeaderWriterLogoutHandler;
 import org.springframework.security.web.authentication.rememberme.*;
@@ -201,7 +204,8 @@ public class SecurityConfig {
                                                    RememberMeServices rememberMeServices,
                                                    HandlerMappingIntrospector handlerMappingIntrospector,
                                                    GrantedAuthorityDefaults grantedAuthorityDefaults,
-                                                   CustomAccessDenied fourZeroThreeHandler) throws Exception {
+                                                   CustomAccessDenied fourZeroThreeHandler,
+                                                   AuthorizationManager<RequestAuthorizationContext> author) throws Exception {
         //创建多个共享相同servlet路径的MvcRequestMatcher
 //        MvcRequestMatcher.Builder mvcMatcherBuilder = new MvcRequestMatcher.Builder(handlerMappingIntrospector);
 
@@ -211,7 +215,7 @@ public class SecurityConfig {
 //                .loginPage("/login").permitAll().and()
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/test/applicationState").hasRole("ADMIN")
-                                .anyRequest().permitAll()
+                                .anyRequest().access(author)
                 )
                 .httpBasic(Customizer.withDefaults())
                 .securityContext(securityContext -> securityContext
