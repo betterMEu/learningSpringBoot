@@ -1,8 +1,10 @@
 package one.two.three.config;
 
+import org.springframework.beans.factory.support.BeanDefinitionOverrideException;
 import org.springframework.boot.diagnostics.AbstractFailureAnalyzer;
 import org.springframework.boot.diagnostics.FailureAnalysis;
 import org.springframework.boot.web.server.PortInUseException;
+import org.springframework.context.ApplicationContextException;
 
 /**
  * @Author: 余龙声
@@ -14,9 +16,15 @@ public class ProjectConstraintViolationFailureAnalyzer extends AbstractFailureAn
 
     @Override
     protected FailureAnalysis analyze(Throwable rootFailure, Exception cause) {
-        if (cause.getCause() instanceof PortInUseException) {
-            String message = "端口已被使用，请切换另外的端口号启动！";
-            return new FailureAnalysis(message, "更新 application.properties 文件，使用不同的端口号.", cause);
+        if (cause instanceof ApplicationContextException) {
+            if (cause.getCause() instanceof PortInUseException) {
+                String message = "端口已被使用，请切换另外的端口号启动！";
+                return new FailureAnalysis(message, "更新 application.properties 文件，使用不同的端口号.", cause);
+            }
+        }
+
+        if (cause instanceof BeanDefinitionOverrideException) {
+
         }
         // Handle other types of failures if needed
         return null;

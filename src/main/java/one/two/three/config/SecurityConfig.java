@@ -1,11 +1,12 @@
 package one.two.three.config;
 
 import jakarta.annotation.Resource;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.context.MessageSource;
+import one.two.three.components.security.accessDeniedHandler.CustomAccessDenied;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.support.ReloadableResourceBundleMessageSource;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -13,11 +14,11 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.SessionManagementConfigurer;
+import org.springframework.security.config.core.GrantedAuthorityDefaults;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.provisioning.UserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
@@ -29,8 +30,11 @@ import org.springframework.security.web.context.HttpSessionSecurityContextReposi
 import org.springframework.security.web.context.RequestAttributeSecurityContextRepository;
 import org.springframework.security.web.header.writers.ClearSiteDataHeaderWriter;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
+import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
 
 import javax.sql.DataSource;
+
+import java.sql.SQLException;
 
 import static org.springframework.security.web.header.writers.ClearSiteDataHeaderWriter.Directive.COOKIES;
 
@@ -49,6 +53,19 @@ public class SecurityConfig {
     @Resource
     private DataSource dataSource;
 
+    @Value("${init.flag.table.security}")
+    private boolean securityTableInitFlag;
+
+    /**
+     * 改变角色前缀，默认是ROLE_
+     * 已知：1）改变的是请求中的角色前缀，存入数据库的还是ROLE_
+     */
+    @Bean
+    static GrantedAuthorityDefaults grantedAuthorityDefaults() {
+        return new GrantedAuthorityDefaults("MYPREFIX_");
+    }
+
+//--------------------------------------------------------认证----------------------------------------------------------------
     /**
      * 定义多个认证用户（可以定义一个用户，如下一个例子）
      * @return 内存型用户密码校验
@@ -79,11 +96,24 @@ public class SecurityConfig {
                 .username("admin")
                 .password(passwordEncoder.encode("yls"))
                 .roles("USER", "ADMIN")
-                .disabled(Boolean.TRUE)
+//                .disabled(Boolean.TRUE)
                 .build();
         JdbcUserDetailsManager users = new JdbcUserDetailsManager(dataSource);
-        users.updateUser(user);
-        users.updateUser(admin);
+
+        if (securityTableInitFlag) {
+            ClassPathResource resource = new ClassPathResource("sql/initSecurityTable.sql");
+            try {
+                ScriptUtils.executeSqlScript(dataSource.getConnection(), resource);
+            } catch (SQLException e) {
+                // 处理异常
+            }
+            users.createUser(user);
+            users.createUser(admin);
+        } else {
+            users.updateUser(user);
+            users.updateUser(admin);
+        }
+
         return users;
     }
 
@@ -110,8 +140,14 @@ public class SecurityConfig {
     public HttpSessionEventPublisher httpSessionEventPublisher() {
         return new HttpSessionEventPublisher();
     }
+//-------------------------------------------------------------------------------------------------------------------------------------------
 
-    //--------------------------------------------------------REMEMBER_ME-------------------------------------------------------------------------
+
+//--------------------------------------------------------授权-----------------------------------------------------------------------------------
+
+
+
+//--------------------------------------------------------REMEMBER_ME-------------------------------------------------------------------------
     @Bean
     public RememberMeServices rememberMeServices(UserDetailsService userDetailsService, PersistentTokenRepository persistentTokenRepository) {
         return new PersistentTokenBasedRememberMeServices(REMEMBER_ME_KEY, userDetailsService, persistentTokenRepository);
@@ -121,7 +157,7 @@ public class SecurityConfig {
     public PersistentTokenRepository persistentTokenRepository() {
         JdbcTokenRepositoryImpl jdbcTokenRepository = new JdbcTokenRepositoryImpl();
         jdbcTokenRepository.setDataSource(dataSource);
-//        jdbcTokenRepository.setCreateTableOnStartup(Boolean.TRUE);
+        jdbcTokenRepository.setCreateTableOnStartup(securityTableInitFlag);
         return jdbcTokenRepository;
     }
 
@@ -141,24 +177,42 @@ public class SecurityConfig {
     }
 //---------------------------------------------------------------------------------------------------------------------------------
 
-    @Bean
-    public MessageSource messageSource() {
-        ReloadableResourceBundleMessageSource messageSource = new ReloadableResourceBundleMessageSource();
-        messageSource.setBasename("classpath:org/springframework/security/messages_zh_CN");
-        return messageSource;
-    }
+//    @Bean
+//    public MessageSource messageSource() {
+//        ReloadableResourceBundleMessageSource messageSource = new ReloadableResourceBundleMessageSource();
+//        messageSource.setBasename("classpath:org/springframework/security/messages_zh_CN");
+//        return messageSource;
+//    }
+
+//    @Bean
+//    public HandlerMappingIntrospector mvcHandlerMappingIntrospector() {
+//        return new HandlerMappingIntrospector();
+//    }
+
+
+
+
 
     /**
      * Customizer.withDefaults()是注入默认的安全配置
      */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
-                                                   RememberMeServices rememberMeServices) throws Exception {
+                                                   RememberMeServices rememberMeServices,
+                                                   HandlerMappingIntrospector handlerMappingIntrospector,
+                                                   GrantedAuthorityDefaults grantedAuthorityDefaults,
+                                                   CustomAccessDenied fourZeroThreeHandler) throws Exception {
+        //创建多个共享相同servlet路径的MvcRequestMatcher
+//        MvcRequestMatcher.Builder mvcMatcherBuilder = new MvcRequestMatcher.Builder(handlerMappingIntrospector);
+
         http
                 .csrf(Customizer.withDefaults())
                 .formLogin(Customizer.withDefaults())
 //                .loginPage("/login").permitAll().and()
-                .authorizeHttpRequests(author -> author.anyRequest().authenticated())
+                .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers("/test/applicationState").hasRole("ADMIN")
+                                .anyRequest().permitAll()
+                )
                 .httpBasic(Customizer.withDefaults())
                 .securityContext(securityContext -> securityContext
                                 // security-securityContext默认配置
@@ -179,7 +233,9 @@ public class SecurityConfig {
                 )
                 .logout(logout -> logout
                         .addLogoutHandler(new HeaderWriterLogoutHandler(new ClearSiteDataHeaderWriter(COOKIES))) //注销时，清除用户网站的cookies（目的是删除session）
-                );
+                )
+                .exceptionHandling()
+                .accessDeniedHandler(fourZeroThreeHandler);
 
 
 

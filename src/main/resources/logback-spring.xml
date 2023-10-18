@@ -1,33 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 
-    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
-    <include resource="org/springframework/boot/logging/logback/console-appender.xml" />
 
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
-            <layout class="ch.qos.logback.classic.PatternLayout">
-                <pattern>%highlight(%-5level) %logger{36} - %msg%n</pattern>
-            </layout>
+        <encoder>
+            <pattern>%highlight(%-5level) %50logger{50} -- %msg%n</pattern>
         </encoder>
     </appender>
 
-    <appender name="FILE" class="ch.qos.logback.core.FileAppender">
-       <file>logs/LearningSpringBootApplicationLogFile.log</file>
-        <encoder>
-            <pattern>%d{HH-mm-ss} %4r [%thread] %-5level %logger{36} -%kvp- %msg%n</pattern>
-        </encoder>
-    </appender>
+<!--    <appender name="FILE" class="ch.qos.logback.core.FileAppender">-->
+<!--       <file>logs/LearningSpringBootApplicationLogFile.log</file>-->
+<!--        <encoder>-->
+<!--            <pattern>%d{HH-mm-ss} %4r [%thread] %-5level %logger{36} -%kvp- %msg%n</pattern>-->
+<!--        </encoder>-->
+<!--    </appender>-->
 
     <!--    将特定包或者类的日志级别设置-->
 <!--    <logger name="one.two.three.components.ApplicationArgumentsCommandLineRunner" level="DEBUG" additivity="false">-->
 <!--        <appender-ref ref="FILE" />-->
 <!--    </logger>-->
 
-<!--    <root level="NONE">-->
-<!--        <appender-ref ref="CONSOLE" />-->
-<!--        <appender-ref ref="STDOUT" />-->
+    <root level="INFO">
+        <appender-ref ref="STDOUT" />
 <!--        <appender-ref ref="FILE" />-->
-<!--    </root>-->
+    </root>
 
 </configuration>

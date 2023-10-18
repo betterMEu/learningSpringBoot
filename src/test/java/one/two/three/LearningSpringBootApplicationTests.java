@@ -12,21 +12,7 @@ class LearningSpringBootApplicationTests {
 
 	@Test
 	void contextLoads() {
-		String str = "{\n" +
-				"  \"pagination\": {\n" +
-				"    \"total\": 10419,\n" +
-				"    \"pageSize\": 20,\n" +
-				"    \"page\": 1\n" +
-				"  },\n" +
-				"  \"filters\": {},\n" +
-				"  \"sorter\": {},\n" +
-				"  \"searchTextMap\": {},\n" +
-				"  \"searchParams\": {\n" +
-				"  },\n" +
-				"  \"sqlParams\": {},\n" +
-				"  \"initParams\": {},\n" +
-				"  \"sign\": \"zhxg_gyxt_fjgl\"\n" +
-				"}";
+		String str = "";
 		System.out.println(str.replaceAll("\\n", "").replaceAll(" ", ""));
 	}
 

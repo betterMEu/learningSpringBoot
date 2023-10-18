@@ -1,6 +1,7 @@
 server:
   port: 9000
 #  servlet:
+#    context-path: /test
 #    encoding:
 #      charset: utf-8
 #      enabled: true
@@ -11,6 +12,10 @@ app:
   encoding: "@project.build.sourceEncoding@"
   java:
     version: "@java.version@"
+init:
+  flag:
+    table:
+      security: false  # 涉及到remember-me和jdbc存储帐号密码的表生成
 ############################################
 
 #logging:
@@ -40,5 +45,6 @@ spring:
     banner-mode: "console"
     lazy-initialization: true # 懒加载-Bean在需要时被创建，而不是在应用程序启动时就创建
 
+  ###################### 国际化 #####################
 
 

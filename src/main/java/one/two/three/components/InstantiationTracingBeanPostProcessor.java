@@ -3,7 +3,7 @@ package one.two.three.components;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.stereotype.Component;
 
-@Component
+//@Component
 public class InstantiationTracingBeanPostProcessor implements BeanPostProcessor {
 
     // simply return the instantiated bean as-is
