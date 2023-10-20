@@ -3,16 +3,22 @@ package one.two.three.config;
 import jakarta.annotation.Resource;
 import one.two.three.components.security.accessDeniedHandler.CustomAccessDenied;
 import one.two.three.components.security.author.OpenPolicyAgentAuthorizationManager;
+import one.two.three.components.security.filter.TestFilter;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.datasource.init.ScriptUtils;
+import org.springframework.security.authentication.AuthenticationEventPublisher;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.DefaultAuthenticationEventPublisher;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.authorization.AuthorizationManager;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.SessionManagementConfigurer;
@@ -24,6 +30,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.provisioning.UserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
 import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.authentication.logout.HeaderWriterLogoutHandler;
@@ -32,6 +39,7 @@ import org.springframework.security.web.context.DelegatingSecurityContextReposit
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.RequestAttributeSecurityContextRepository;
 import org.springframework.security.web.header.writers.ClearSiteDataHeaderWriter;
+import org.springframework.security.web.servlet.util.matcher.MvcRequestMatcher;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
 import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
 
@@ -48,6 +56,7 @@ import static org.springframework.security.web.header.writers.ClearSiteDataHeade
  * @Version: 1.0
  */
 @Configuration
+//@EnableMethodSecurity
 @EnableWebSecurity
 public class SecurityConfig {
 
@@ -63,29 +72,12 @@ public class SecurityConfig {
      * 改变角色前缀，默认是ROLE_
      * 已知：1）改变的是请求中的角色前缀，存入数据库的还是ROLE_
      */
-    @Bean
-    static GrantedAuthorityDefaults grantedAuthorityDefaults() {
-        return new GrantedAuthorityDefaults("MYPREFIX_");
-    }
+//    @Bean
+//    static GrantedAuthorityDefaults grantedAuthorityDefaults() {
+//        return new GrantedAuthorityDefaults("MYPREFIX_");
+//    }
 
 //--------------------------------------------------------认证----------------------------------------------------------------
-    /**
-     * 定义多个认证用户（可以定义一个用户，如下一个例子）
-     * @return 内存型用户密码校验
-     */
-//    @Bean
-//    @ConditionalOnMissingBean(UserDetailsService.class)
-//    public InMemoryUserDetailsManager inMemoryUserDetailsManager(BCryptPasswordEncoder passwordEncoder) {
-//        String defaultPassword = "yls";
-//        return new InMemoryUserDetailsManager(
-//                User.withUsername("user")
-//                        .password(passwordEncoder.encode(defaultPassword))
-//                        .roles("ROLES_USER").build(),
-//                User.withUsername("admin")
-//                        .password(passwordEncoder.encode(defaultPassword))
-//                        .roles("ROLES_ADMIN").build()
-//        );
-//    }
 
     @Bean
     UserDetailsManager users(DataSource dataSource,BCryptPasswordEncoder passwordEncoder) {
@@ -93,13 +85,11 @@ public class SecurityConfig {
                 .username("user")
                 .password(passwordEncoder.encode("yls"))
                 .roles("USER")
-//                .disabled(Boolean.FALSE)
                 .build();
         UserDetails admin = User.builder()
                 .username("admin")
                 .password(passwordEncoder.encode("yls"))
                 .roles("USER", "ADMIN")
-//                .disabled(Boolean.TRUE)
                 .build();
         JdbcUserDetailsManager users = new JdbcUserDetailsManager(dataSource);
 
@@ -120,15 +110,11 @@ public class SecurityConfig {
         return users;
     }
 
-//    @Bean
-//    UserDetailsService userDetailsService() {
-//        UserDetails user = User.withDefaultPasswordEncoder()  // 默认密码编码：一定要有
-//                .username("user")
-//                .password("password")
-//                .roles("USER")
-//                .build();
-//        return new InMemoryUserDetailsManager(user);
-//    }
+    @Bean
+    @ConditionalOnMissingBean(AuthenticationEventPublisher.class)
+    DefaultAuthenticationEventPublisher defaultAuthenticationEventPublisher(ApplicationEventPublisher delegate) {
+        return new DefaultAuthenticationEventPublisher(delegate);
+    }
 
 
     /**
@@ -180,20 +166,6 @@ public class SecurityConfig {
     }
 //---------------------------------------------------------------------------------------------------------------------------------
 
-//    @Bean
-//    public MessageSource messageSource() {
-//        ReloadableResourceBundleMessageSource messageSource = new ReloadableResourceBundleMessageSource();
-//        messageSource.setBasename("classpath:org/springframework/security/messages_zh_CN");
-//        return messageSource;
-//    }
-
-//    @Bean
-//    public HandlerMappingIntrospector mvcHandlerMappingIntrospector() {
-//        return new HandlerMappingIntrospector();
-//    }
-
-
-
 
 
     /**
@@ -203,18 +175,17 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
                                                    RememberMeServices rememberMeServices,
                                                    HandlerMappingIntrospector handlerMappingIntrospector,
-                                                   GrantedAuthorityDefaults grantedAuthorityDefaults,
                                                    CustomAccessDenied fourZeroThreeHandler,
                                                    AuthorizationManager<RequestAuthorizationContext> author) throws Exception {
         //创建多个共享相同servlet路径的MvcRequestMatcher
-//        MvcRequestMatcher.Builder mvcMatcherBuilder = new MvcRequestMatcher.Builder(handlerMappingIntrospector);
+        MvcRequestMatcher.Builder mvcMatcherBuilder = new MvcRequestMatcher.Builder(handlerMappingIntrospector);
 
         http
                 .csrf(Customizer.withDefaults())
                 .formLogin(Customizer.withDefaults())
 //                .loginPage("/login").permitAll().and()
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/test/applicationState").hasRole("ADMIN")
+                        .requestMatchers(mvcMatcherBuilder.pattern("/test/applicationState")).hasRole("ADMIN")
                                 .anyRequest().access(author)
                 )
                 .httpBasic(Customizer.withDefaults())
@@ -240,6 +211,7 @@ public class SecurityConfig {
                 )
                 .exceptionHandling()
                 .accessDeniedHandler(fourZeroThreeHandler);
+//                .and().addFilterBefore(new TestFilter(), AuthorizationFilter.class);
 
 
 
