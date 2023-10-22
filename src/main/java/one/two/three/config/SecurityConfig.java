@@ -9,6 +9,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.springframework.security.authentication.AuthenticationEventPublisher;
@@ -23,6 +24,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.SessionManagementConfigurer;
 import org.springframework.security.config.core.GrantedAuthorityDefaults;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -56,7 +58,7 @@ import static org.springframework.security.web.header.writers.ClearSiteDataHeade
  * @Version: 1.0
  */
 @Configuration
-//@EnableMethodSecurity
+@EnableMethodSecurity
 @EnableWebSecurity
 public class SecurityConfig {
 
@@ -72,26 +74,46 @@ public class SecurityConfig {
      * 改变角色前缀，默认是ROLE_
      * 已知：1）改变的是请求中的角色前缀，存入数据库的还是ROLE_
      */
-//    @Bean
-//    static GrantedAuthorityDefaults grantedAuthorityDefaults() {
-//        return new GrantedAuthorityDefaults("MYPREFIX_");
-//    }
+    @Bean
+    static GrantedAuthorityDefaults grantedAuthorityDefaults() {
+        return new GrantedAuthorityDefaults("MYPREFIX_");
+    }
 
 //--------------------------------------------------------认证----------------------------------------------------------------
 
+    /**
+     * 认证控制器，负责认证流程，主要使用ProviderManager实现类
+     * 可传入多个AuthenticationProvider，不同的AuthenticationProvider负责不同的认证流程，DaoAuthenticationProvider是账号密码认证，JWTAuthenticationProvider是JWT认证
+     */
     @Bean
-    UserDetailsManager users(DataSource dataSource,BCryptPasswordEncoder passwordEncoder) {
+    public AuthenticationManager authenticationManager(UserDetailsService userDetailsService,
+                                                       BCryptPasswordEncoder bCryptPasswordEncoder) {
+        DaoAuthenticationProvider daoAuthenticationProvider = new DaoAuthenticationProvider();
+        daoAuthenticationProvider.setUserDetailsService(userDetailsService);
+        daoAuthenticationProvider.setPasswordEncoder(bCryptPasswordEncoder);
+        return new ProviderManager(daoAuthenticationProvider);
+    }
+
+    /**
+     * UserDetailsService 存储用户信息（账号密码、权限）
+     */
+    @Bean
+    UserDetailsManager jdbcUsers(DataSource dataSource,
+                                 @Lazy AuthenticationManager authenticationManager,
+                                 BCryptPasswordEncoder passwordEncoder) {
         UserDetails user = User.builder()
                 .username("user")
                 .password(passwordEncoder.encode("yls"))
-                .roles("USER")
+//                .roles("USER")
+                .authorities(new SimpleGrantedAuthority("READ"), new SimpleGrantedAuthority("WRITE"))
                 .build();
         UserDetails admin = User.builder()
                 .username("admin")
                 .password(passwordEncoder.encode("yls"))
                 .roles("USER", "ADMIN")
                 .build();
-        JdbcUserDetailsManager users = new JdbcUserDetailsManager(dataSource);
+        JdbcUserDetailsManager jdbcUsers = new JdbcUserDetailsManager(dataSource);
+        jdbcUsers.setAuthenticationManager(authenticationManager);
 
         if (securityTableInitFlag) {
             ClassPathResource resource = new ClassPathResource("sql/initSecurityTable.sql");
@@ -100,15 +122,27 @@ public class SecurityConfig {
             } catch (SQLException e) {
                 // 处理异常
             }
-            users.createUser(user);
-            users.createUser(admin);
+            jdbcUsers.createUser(user);
+            jdbcUsers.createUser(admin);
         } else {
-            users.updateUser(user);
-            users.updateUser(admin);
+            jdbcUsers.updateUser(user);
+            jdbcUsers.updateUser(admin);
         }
 
-        return users;
+        return jdbcUsers;
     }
+
+    /**
+     * 密码加密
+     */
+    @Bean
+    public BCryptPasswordEncoder bCryptPasswordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+//----------------------------------------------------END-----------------------------------------------------------------------------------
+
+
+//-----------------------------------------------------未知--------------------------------------------------------------------
 
     @Bean
     @ConditionalOnMissingBean(AuthenticationEventPublisher.class)
@@ -116,20 +150,12 @@ public class SecurityConfig {
         return new DefaultAuthenticationEventPublisher(delegate);
     }
 
-
-    /**
-     * 重写认证时需要提供PasswordEncoder(否则报错)，在认证中对密码进行编码
-     */
-    @Bean
-    public BCryptPasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
-
     @Bean
     public HttpSessionEventPublisher httpSessionEventPublisher() {
         return new HttpSessionEventPublisher();
     }
-//-------------------------------------------------------------------------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------------------------------------------------------
 
 
 //--------------------------------------------------------授权-----------------------------------------------------------------------------------
@@ -138,7 +164,8 @@ public class SecurityConfig {
 
 //--------------------------------------------------------REMEMBER_ME-------------------------------------------------------------------------
     @Bean
-    public RememberMeServices rememberMeServices(UserDetailsService userDetailsService, PersistentTokenRepository persistentTokenRepository) {
+    public RememberMeServices rememberMeServices(UserDetailsService userDetailsService,
+                                                 PersistentTokenRepository persistentTokenRepository) {
         return new PersistentTokenBasedRememberMeServices(REMEMBER_ME_KEY, userDetailsService, persistentTokenRepository);
     }
 
@@ -151,18 +178,9 @@ public class SecurityConfig {
     }
 
     @Bean
-    public RememberMeAuthenticationFilter rememberMeFilter(RememberMeServices rememberMeServices, AuthenticationManager authenticationManager) throws Exception {
+    public RememberMeAuthenticationFilter rememberMeFilter(RememberMeServices rememberMeServices,
+                                                           AuthenticationManager authenticationManager) {
         return new RememberMeAuthenticationFilter(authenticationManager, rememberMeServices);
-    }
-
-    /**
-     * DaoAuthenticationProvider 是一个 AuthenticationProvider 的实现，它使用 UserDetailsService 和 PasswordEncoder 来验证一个用户名和密码
-     */
-    @Bean
-    public AuthenticationManager authenticationManager(UserDetailsService userDetailsService) {
-        DaoAuthenticationProvider daoAuthenticationProvider = new DaoAuthenticationProvider();
-        daoAuthenticationProvider.setUserDetailsService(userDetailsService);
-        return new ProviderManager(daoAuthenticationProvider);
     }
 //---------------------------------------------------------------------------------------------------------------------------------
 
@@ -183,10 +201,11 @@ public class SecurityConfig {
         http
                 .csrf(Customizer.withDefaults())
                 .formLogin(Customizer.withDefaults())
+                .passwordManagement(Customizer.withDefaults())
 //                .loginPage("/login").permitAll().and()
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(mvcMatcherBuilder.pattern("/test/applicationState")).hasRole("ADMIN")
-                                .anyRequest().access(author)
+                                .anyRequest().authenticated()
                 )
                 .httpBasic(Customizer.withDefaults())
                 .securityContext(securityContext -> securityContext
