@@ -48,6 +48,7 @@ import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
 import javax.sql.DataSource;
 
 import java.sql.SQLException;
+import java.util.List;
 
 import static org.springframework.security.web.header.writers.ClearSiteDataHeaderWriter.Directive.COOKIES;
 
@@ -101,19 +102,21 @@ public class SecurityConfig {
     UserDetailsManager jdbcUsers(DataSource dataSource,
                                  @Lazy AuthenticationManager authenticationManager,
                                  BCryptPasswordEncoder passwordEncoder) {
+
+        JdbcUserDetailsManager jdbcUsers = this.getJdbcUserDetailsManager(dataSource, authenticationManager);
+
         UserDetails user = User.builder()
                 .username("user")
                 .password(passwordEncoder.encode("yls"))
-//                .roles("USER")
-                .authorities(new SimpleGrantedAuthority("READ"), new SimpleGrantedAuthority("WRITE"))
+//                .roles("TEST")
+                .authorities(new SimpleGrantedAuthority("ROLE_TEST"),new SimpleGrantedAuthority("READ"), new SimpleGrantedAuthority("WRITE"))
                 .build();
         UserDetails admin = User.builder()
                 .username("admin")
                 .password(passwordEncoder.encode("yls"))
-                .roles("USER", "ADMIN")
+                .roles("ADMIN")
                 .build();
-        JdbcUserDetailsManager jdbcUsers = new JdbcUserDetailsManager(dataSource);
-        jdbcUsers.setAuthenticationManager(authenticationManager);
+
 
         if (securityTableInitFlag) {
             ClassPathResource resource = new ClassPathResource("sql/initSecurityTable.sql");
@@ -122,13 +125,31 @@ public class SecurityConfig {
             } catch (SQLException e) {
                 // 处理异常
             }
+
             jdbcUsers.createUser(user);
             jdbcUsers.createUser(admin);
+            jdbcUsers.createGroup("USER", List.of(new SimpleGrantedAuthority("ROLE_USER")));
+            jdbcUsers.addUserToGroup("user", "USER");
+            jdbcUsers.addUserToGroup("admin", "USER");
         } else {
             jdbcUsers.updateUser(user);
             jdbcUsers.updateUser(admin);
         }
 
+        return jdbcUsers;
+    }
+
+    private JdbcUserDetailsManager getJdbcUserDetailsManager(DataSource dataSource, AuthenticationManager authenticationManager) {
+        JdbcUserDetailsManager jdbcUsers = new JdbcUserDetailsManager(dataSource);
+        jdbcUsers.setAuthenticationManager(authenticationManager);
+
+        jdbcUsers.setFindAllGroupsSql("select group_name from `groups`");
+        jdbcUsers.setFindUsersInGroupSql("select username from group_members gm, `groups` g where gm.group_id = g.id and g.group_name = ?");
+        jdbcUsers.setInsertGroupSql("insert into `groups` (group_name) values (?)");
+        jdbcUsers.setFindGroupIdSql("select id from `groups` where group_name = ?");
+        jdbcUsers.setDeleteGroupSql("delete from `groups` where id = ?");
+        jdbcUsers.setRenameGroupSql("update `groups` set group_name = ? where group_name = ?");
+        jdbcUsers.setGroupAuthoritiesSql("select g.id, g.group_name, ga.authority from `groups` g, group_authorities ga where g.group_name = ? and g.id = ga.group_id ");
         return jdbcUsers;
     }
 
@@ -204,7 +225,7 @@ public class SecurityConfig {
                 .passwordManagement(Customizer.withDefaults())
 //                .loginPage("/login").permitAll().and()
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers(mvcMatcherBuilder.pattern("/test/applicationState")).hasRole("ADMIN")
+//                        .requestMatchers(mvcMatcherBuilder.pattern("/test/applicationState")).hasRole("ADMIN")
                                 .anyRequest().authenticated()
                 )
                 .httpBasic(Customizer.withDefaults())
