@@ -14,6 +14,9 @@ public final class OpenPolicyAgentAuthorizationManager implements AuthorizationM
     @Override
     public AuthorizationDecision check(Supplier<Authentication> authentication, RequestAuthorizationContext context) {
         // make request to Open Policy Agent
+
+
+
         return null;
     }
 }

@@ -44,7 +44,7 @@ public class TestController {
         return applicationObserver.printApplicationState();
     }
 
-    @GetMapping("getAuthorities")
+    @GetMapping("/getAuthorities")
     public String getAuthorities() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         User user = (User) authentication.getPrincipal();

@@ -88,11 +88,19 @@ public class SecurityConfig {
      */
     @Bean
     public AuthenticationManager authenticationManager(UserDetailsService userDetailsService,
-                                                       BCryptPasswordEncoder bCryptPasswordEncoder) {
+                                                       BCryptPasswordEncoder bCryptPasswordEncoder,
+                                                       DefaultAuthenticationEventPublisher authenticationEventPublisher) {
         DaoAuthenticationProvider daoAuthenticationProvider = new DaoAuthenticationProvider();
         daoAuthenticationProvider.setUserDetailsService(userDetailsService);
         daoAuthenticationProvider.setPasswordEncoder(bCryptPasswordEncoder);
-        return new ProviderManager(daoAuthenticationProvider);
+        ProviderManager providerManager = new ProviderManager(daoAuthenticationProvider);
+        providerManager.setAuthenticationEventPublisher(authenticationEventPublisher);
+        return providerManager;
+    }
+
+    @Bean
+    public DefaultAuthenticationEventPublisher authenticationEventPublisher(ApplicationEventPublisher applicationEventPublisher) {
+        return new DefaultAuthenticationEventPublisher(applicationEventPublisher);
     }
 
     /**
@@ -125,9 +133,9 @@ public class SecurityConfig {
             } catch (SQLException e) {
                 // 处理异常
             }
-
             jdbcUsers.createUser(user);
             jdbcUsers.createUser(admin);
+
             jdbcUsers.createGroup("USER", List.of(new SimpleGrantedAuthority("ROLE_USER")));
             jdbcUsers.addUserToGroup("user", "USER");
             jdbcUsers.addUserToGroup("admin", "USER");
@@ -143,6 +151,10 @@ public class SecurityConfig {
         JdbcUserDetailsManager jdbcUsers = new JdbcUserDetailsManager(dataSource);
         jdbcUsers.setAuthenticationManager(authenticationManager);
 
+        /*
+         * 启用权限组，顾名思义权限组，使用hasAuthority检查
+         */
+        jdbcUsers.setEnableGroups(Boolean.TRUE);
         jdbcUsers.setFindAllGroupsSql("select group_name from `groups`");
         jdbcUsers.setFindUsersInGroupSql("select username from group_members gm, `groups` g where gm.group_id = g.id and g.group_name = ?");
         jdbcUsers.setInsertGroupSql("insert into `groups` (group_name) values (?)");
@@ -150,6 +162,7 @@ public class SecurityConfig {
         jdbcUsers.setDeleteGroupSql("delete from `groups` where id = ?");
         jdbcUsers.setRenameGroupSql("update `groups` set group_name = ? where group_name = ?");
         jdbcUsers.setGroupAuthoritiesSql("select g.id, g.group_name, ga.authority from `groups` g, group_authorities ga where g.group_name = ? and g.id = ga.group_id ");
+        jdbcUsers.setGroupAuthoritiesByUsernameQuery("select g.id, g.group_name, ga.authority from `groups` g, group_members gm, group_authorities ga where gm.username = ? and g.id = ga.group_id and g.id = gm.group_id");
         return jdbcUsers;
     }
 
@@ -161,6 +174,10 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 //----------------------------------------------------END-----------------------------------------------------------------------------------
+
+
+//-----------------------------------------------------授权--------------------------------------------------------------------
+
 
 
 //-----------------------------------------------------未知--------------------------------------------------------------------
@@ -179,7 +196,6 @@ public class SecurityConfig {
 //-----------------------------------------------------------------------------------------------------------------------------
 
 
-//--------------------------------------------------------授权-----------------------------------------------------------------------------------
 
 
 
@@ -224,9 +240,12 @@ public class SecurityConfig {
                 .formLogin(Customizer.withDefaults())
                 .passwordManagement(Customizer.withDefaults())
 //                .loginPage("/login").permitAll().and()
-                .authorizeHttpRequests(authorize -> authorize
+//                .authorizeHttpRequests(authorize -> authorize
 //                        .requestMatchers(mvcMatcherBuilder.pattern("/test/applicationState")).hasRole("ADMIN")
-                                .anyRequest().authenticated()
+//                                .anyRequest().authenticated()
+//                )
+                .authorizeHttpRequests((authorize) -> authorize
+                        .anyRequest().access(author)
                 )
                 .httpBasic(Customizer.withDefaults())
                 .securityContext(securityContext -> securityContext

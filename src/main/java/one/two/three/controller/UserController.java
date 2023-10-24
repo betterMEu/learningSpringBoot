@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import java.util.List;
 
 @Controller
-@PreAuthorize("hasRole('USER')")
+@PreAuthorize("hasAuthority('ROLE_USER')")
 public class UserController {
 
     @Resource
