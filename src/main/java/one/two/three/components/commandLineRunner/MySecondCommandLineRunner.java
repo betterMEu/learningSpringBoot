@@ -1,4 +1,4 @@
-package one.two.three.components;
+package one.two.three.components.commandLineRunner;
 
 import jakarta.annotation.Resource;
 import org.springframework.boot.CommandLineRunner;

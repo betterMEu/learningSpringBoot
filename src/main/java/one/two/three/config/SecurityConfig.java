@@ -75,10 +75,10 @@ public class SecurityConfig {
      * 改变角色前缀，默认是ROLE_
      * 已知：1）改变的是请求中的角色前缀，存入数据库的还是ROLE_
      */
-    @Bean
-    static GrantedAuthorityDefaults grantedAuthorityDefaults() {
-        return new GrantedAuthorityDefaults("MYPREFIX_");
-    }
+//    @Bean
+//    static GrantedAuthorityDefaults grantedAuthorityDefaults() {
+//        return new GrantedAuthorityDefaults("MYPREFIX_");
+//    }
 
 //--------------------------------------------------------认证----------------------------------------------------------------
 
@@ -116,8 +116,10 @@ public class SecurityConfig {
         UserDetails user = User.builder()
                 .username("user")
                 .password(passwordEncoder.encode("yls"))
-//                .roles("TEST")
-                .authorities(new SimpleGrantedAuthority("ROLE_TEST"),new SimpleGrantedAuthority("READ"), new SimpleGrantedAuthority("WRITE"))
+                .roles("TEST")
+                .authorities(new SimpleGrantedAuthority("ROLE_TEST"),
+                        new SimpleGrantedAuthority("READ"),
+                        new SimpleGrantedAuthority("WRITE"))
                 .build();
         UserDetails admin = User.builder()
                 .username("admin")
@@ -240,13 +242,13 @@ public class SecurityConfig {
                 .formLogin(Customizer.withDefaults())
                 .passwordManagement(Customizer.withDefaults())
 //                .loginPage("/login").permitAll().and()
-//                .authorizeHttpRequests(authorize -> authorize
-//                        .requestMatchers(mvcMatcherBuilder.pattern("/test/applicationState")).hasRole("ADMIN")
-//                                .anyRequest().authenticated()
-//                )
-                .authorizeHttpRequests((authorize) -> authorize
-                        .anyRequest().access(author)
+                .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers(mvcMatcherBuilder.pattern("/test/applicationState")).hasRole("ADMIN")
+                                .anyRequest().authenticated()
                 )
+//                .authorizeHttpRequests((authorize) -> authorize
+//                        .anyRequest().access(author)
+//                )
                 .httpBasic(Customizer.withDefaults())
                 .securityContext(securityContext -> securityContext
                                 // security-securityContext默认配置

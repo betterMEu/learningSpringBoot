@@ -1,4 +1,4 @@
-package one.two.three.components;
+package one.two.three.components.commandLineRunner;
 
 
 import org.slf4j.Logger;
@@ -16,7 +16,7 @@ import java.util.Arrays;
  * @Author: 余龙声
  * @Description:
         需要在 SpringApplication 启动后运行一些特定的代码，你可以实现 ApplicationRunner 或 CommandLineRunner 接口。
-        这两个接口以相同的方式工作，并提供一个单一的 run 方法，该方法在 SpringApplication.run(…​) 执行完毕之前被调用。
+        这两个接口以相同的方式工作，并提供一个单一的 run 方法，该方法在 SpringApplication.run(…) 执行完毕之前被调用。
         这很适合用于执行那些需要在处理HTTP请求之前执行的任务。
  * @Date: 2023/10/9 14:40
  * @Version: 1.0

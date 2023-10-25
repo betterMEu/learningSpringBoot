@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@PreAuthorize("hasAuthority('ROLE_TEST')")
+//@PreAuthorize("hasAuthority('ROLE_TEST')")
 @RequestMapping("/test")
 public class TestController {
 
