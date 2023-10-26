@@ -10,12 +10,15 @@ import org.springframework.web.multipart.support.StandardServletMultipartResolve
  * @Date: 2023/10/25 14:04
  * @Version: 1.0
  */
-@Configuration
+//@Configuration
 public class AppConfig {
 
-    @Bean
-    public StandardServletMultipartResolver multipartResolver() {
-        return new StandardServletMultipartResolver();
-    }
+
+//    @Bean
+//    public StandardServletMultipartResolver multipartResolver() {
+//        return new StandardServletMultipartResolver();
+//    }
+
+
 
 }

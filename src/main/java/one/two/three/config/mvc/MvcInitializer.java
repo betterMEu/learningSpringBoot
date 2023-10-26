@@ -11,8 +11,6 @@ import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatche
 /**
  * Servlet，不需要@Configuration
  */
-@Configuration
-@EnableWebMvc
 public class MvcInitializer extends AbstractAnnotationConfigDispatcherServletInitializer {
 
     /**

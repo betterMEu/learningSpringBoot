@@ -69,7 +69,7 @@ public class SecurityConfig {
     private DataSource dataSource;
 
     @Value("${init.flag.table.security}")
-    private boolean securityTableInitFlag;
+    private boolean tableResetFlag;
 
     /**
      * 改变角色前缀，默认是ROLE_
@@ -128,10 +128,12 @@ public class SecurityConfig {
                 .build();
 
 
-        if (securityTableInitFlag) {
-            ClassPathResource resource = new ClassPathResource("sql/initSecurityTable.sql");
+        if (tableResetFlag) {
+            ClassPathResource resetSql = new ClassPathResource("sql/reset.sql");
+            ClassPathResource createSql = new ClassPathResource("sql/initSecurityTable.sql");
             try {
-                ScriptUtils.executeSqlScript(dataSource.getConnection(), resource);
+                ScriptUtils.executeSqlScript(dataSource.getConnection(), resetSql);
+                ScriptUtils.executeSqlScript(dataSource.getConnection(), createSql);
             } catch (SQLException e) {
                 // 处理异常
             }
@@ -212,7 +214,7 @@ public class SecurityConfig {
     public PersistentTokenRepository persistentTokenRepository() {
         JdbcTokenRepositoryImpl jdbcTokenRepository = new JdbcTokenRepositoryImpl();
         jdbcTokenRepository.setDataSource(dataSource);
-        jdbcTokenRepository.setCreateTableOnStartup(securityTableInitFlag);
+        jdbcTokenRepository.setCreateTableOnStartup(tableResetFlag);
         return jdbcTokenRepository;
     }
 
