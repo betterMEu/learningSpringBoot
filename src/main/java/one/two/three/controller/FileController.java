@@ -10,6 +10,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+
 /**
  * @Author: 余龙声
  * @Description: TODO
@@ -28,13 +33,27 @@ public class FileController {
 
     @PostMapping("/upload")
     public String handleFileUpload(MultipartHttpServletRequest request,
-                                   @RequestParam("file") MultipartFile file,
+                                   @RequestParam("file1") MultipartFile file1,
+                                   @RequestParam("file2") MultipartFile file2,
                                    Model model) {
         // 使用 MultipartHttpServletRequest 对象访问解析后的文件和请求参数
-        if (!file.isEmpty()) {
-            // 处理上传的文件
-            // file.getInputStream() 可以获取文件的输入流
-            // file.getOriginalFilename() 可以获取文件的原始文件名
+        if (!file1.isEmpty()) {
+            String destinationPath = "D:\\practiceBackendProject\\learningSpringBoot\\src\\main\\resources\\file";
+
+            try (InputStream inputStream = file1.getInputStream();
+                 OutputStream outputStream = new FileOutputStream(destinationPath)) {
+
+                byte[] buffer = new byte[-1];
+                int bytesRead;
+                while ((bytesRead = inputStream.read(buffer)) != -1) {
+                    outputStream.write(buffer, 0, bytesRead);
+                }
+
+                System.out.println("文件保存成功！");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
         }
 
         // 处理其他请求参数
