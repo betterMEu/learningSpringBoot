@@ -1,8 +1,10 @@
 package one.two.three.controller;
 
 import jakarta.servlet.annotation.MultipartConfig;
+import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,7 +25,6 @@ import java.io.OutputStream;
  */
 @Controller
 @RequestMapping("/file")
-//@MultipartConfig(location = "C:\\Users\\admin\\Desktop\\file", maxFileSize = 1024 * 1024L, maxRequestSize = 1024L, fileSizeThreshold = 1024)
 public class FileController {
 
     @GetMapping("/upload")
@@ -32,18 +33,17 @@ public class FileController {
     }
 
     @PostMapping("/upload")
-    public String handleFileUpload(MultipartHttpServletRequest request,
-                                   @RequestParam("file1") MultipartFile file1,
+    public String handleFileUpload(@RequestParam("file1") MultipartFile file1,
                                    @RequestParam("file2") MultipartFile file2,
                                    Model model) {
         // 使用 MultipartHttpServletRequest 对象访问解析后的文件和请求参数
         if (!file1.isEmpty()) {
-            String destinationPath = "D:\\practiceBackendProject\\learningSpringBoot\\src\\main\\resources\\file";
+            String f1 = "E:/" + file1.getOriginalFilename();
 
             try (InputStream inputStream = file1.getInputStream();
-                 OutputStream outputStream = new FileOutputStream(destinationPath)) {
+                 OutputStream outputStream = new FileOutputStream(f1)) {
 
-                byte[] buffer = new byte[-1];
+                byte[] buffer = new byte[1024 * 10];
                 int bytesRead;
                 while ((bytesRead = inputStream.read(buffer)) != -1) {
                     outputStream.write(buffer, 0, bytesRead);

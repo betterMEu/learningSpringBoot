@@ -7,6 +7,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
+import org.springframework.context.ApplicationContext;
 
 import java.util.Arrays;
 
@@ -15,12 +16,8 @@ import java.util.Arrays;
 public class LearningSpringBootApplication {
 
 	public static void main(String[] args) {
-//		CustomSpringApplication.run(LearningSpringBootApplication.class, args);
-		new SpringApplicationBuilder()
-				.bannerMode(Banner.Mode.CONSOLE)				// banner模式-打印
-				.sources(LearningSpringBootApplication.class)
-				.lazyInitialization(Boolean.TRUE)				// 懒加载-启用
-				.run(args);
+		ApplicationContext context = SpringApplication.run(LearningSpringBootApplication.class, args);
+		Class<?> beanType = context.getType("roleService");
 	}
 
 }
