@@ -16,8 +16,7 @@ import java.util.Arrays;
 public class LearningSpringBootApplication {
 
 	public static void main(String[] args) {
-		ApplicationContext context = SpringApplication.run(LearningSpringBootApplication.class, args);
-		Class<?> beanType = context.getType("roleService");
+		SpringApplication.run(LearningSpringBootApplication.class, args);
 	}
 
 }

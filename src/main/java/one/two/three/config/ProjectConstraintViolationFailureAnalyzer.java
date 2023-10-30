@@ -23,9 +23,6 @@ public class ProjectConstraintViolationFailureAnalyzer extends AbstractFailureAn
             }
         }
 
-        if (cause instanceof BeanDefinitionOverrideException) {
-
-        }
         // Handle other types of failures if needed
         return null;
     }

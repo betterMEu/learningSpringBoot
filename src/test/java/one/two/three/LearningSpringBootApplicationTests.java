@@ -1,9 +1,7 @@
 package one.two.three;
 
 import jakarta.annotation.Resource;
-import one.two.three.entity.Role;
 import one.two.three.entity.TestUser;
-import one.two.three.mapper.RoleMapper;
 import one.two.three.service.TestService;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

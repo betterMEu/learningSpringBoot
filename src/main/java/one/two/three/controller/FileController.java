@@ -1,21 +1,22 @@
 package one.two.three.controller;
 
-import jakarta.servlet.annotation.MultipartConfig;
-import jakarta.validation.Valid;
+import jakarta.annotation.Resource;
+import one.two.three.exp.ext.StorageFileNotFoundException;
+import one.two.three.service.StorageService;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.multipart.MultipartHttpServletRequest;
+import org.springframework.web.servlet.mvc.method.annotation.MvcUriComponentsBuilder;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.stream.Collectors;
 
 /**
  * @Author: 余龙声
@@ -26,6 +27,57 @@ import java.io.OutputStream;
 @Controller
 @RequestMapping("/file")
 public class FileController {
+
+    @Resource
+    private StorageService storageService;
+
+
+    //从StorageService中查找上传文件的当前列表，并将其加载到Thymeleaf模板中。它通过使用MvcUriComponentsBuilder计算到实际资源的链接。
+    @GetMapping("/test")
+    public String listUploadedFiles(Model model) {
+
+        model.addAttribute("files", storageService.loadAll().map(
+                        path -> MvcUriComponentsBuilder.fromMethodName(
+                                FileController.class,
+                                "serveFile",
+                                path.getFileName().toString()
+                                ).build().toUri().toString())
+                .collect(Collectors.toList()));
+
+        return "uploadForm";
+    }
+
+    @GetMapping("/files/{filename:.+}")
+    @ResponseBody
+    public ResponseEntity<org.springframework.core.io.Resource> serveFile(@PathVariable String filename) {
+
+        org.springframework.core.io.Resource file = storageService.loadAsResource(filename);
+
+        if (file == null)
+            return ResponseEntity.notFound().build();
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getFilename() + "\"")
+                .body(file);
+    }ok
+
+    @PostMapping("/test")
+    public String handleFileUpload(@RequestParam("file") MultipartFile file,
+                                   RedirectAttributes redirectAttributes) {
+
+        storageService.store(file);
+        redirectAttributes.addFlashAttribute("message",
+                "成功上传" + file.getOriginalFilename() + "!");
+
+        return "redirect:/file/test";
+    }
+
+    @ExceptionHandler(StorageFileNotFoundException.class)
+    public ResponseEntity<?> handleStorageFileNotFound(StorageFileNotFoundException exc) {
+        return ResponseEntity.notFound().build();
+    }
+
+
 
     @GetMapping("/upload")
     public String getFileUpload() {

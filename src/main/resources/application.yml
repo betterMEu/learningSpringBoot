@@ -19,6 +19,9 @@ init:
   flag:
     table:
       security: true  # 重置数据表
+
+storage:
+  location: D:\testFile
 ############################################
 
 #logging:
@@ -37,16 +40,21 @@ spring:
       cache:
         period: 31556926 # 一年
 
-  ###################### DATASOURCE #####################
+  ###################### 数据库链接 #####################
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/practice?useUnicode=true&allowPublicKeyRetrieval=true&CharacterEncoding=utf8&useSSL=true
     username: root
     password: 123456
+  ###################### 提供SQL初始化脚本 #####################
+  sql:
+    init:
+      schema-locations: classpath:db/schema-h2.sql  # schema代表表结构SQL
+      data-locations: classpath:db/data-h2.sql      # data代表表数据SQL
 
   ###################### 启动配置 #####################
   main:
-    banner-mode: "console"
+    banner-mode: console
     lazy-initialization: true # 懒加载-Bean在需要时被创建，而不是在应用程序启动时就创建
 
   ###################### MULTIPART #####################
@@ -54,9 +62,9 @@ spring:
     multipart:
       enabled: true
 #      location: C:/Users/admin/Desktop/file
-      max-file-size: 10MB
+      max-file-size: 2MB
       max-request-size: 2MB
-      resolve-lazily: true
+#      resolve-lazily: true
 #      file-size-threshold: 1
 
 

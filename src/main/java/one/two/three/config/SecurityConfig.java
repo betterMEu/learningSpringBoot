@@ -58,9 +58,9 @@ import static org.springframework.security.web.header.writers.ClearSiteDataHeade
  * @Date: 2023/10/11 16:18
  * @Version: 1.0
  */
-@Configuration
-@EnableMethodSecurity
-@EnableWebSecurity
+//@Configuration
+//@EnableMethodSecurity
+//@EnableWebSecurity
 public class SecurityConfig {
 
     private static final String REMEMBER_ME_KEY = "DS5F-D5F5-D5F5-G5HG-D5FS";
@@ -245,6 +245,7 @@ public class SecurityConfig {
                 .passwordManagement(Customizer.withDefaults())
 //                .loginPage("/login").permitAll().and()
                 .authorizeHttpRequests(authorize -> authorize
+//                        .anyRequest().permitAll()
                         .requestMatchers(mvcMatcherBuilder.pattern("/test/applicationState")).hasRole("ADMIN")
                                 .anyRequest().authenticated()
                 )
