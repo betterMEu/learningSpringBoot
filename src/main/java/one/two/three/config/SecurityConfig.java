@@ -127,7 +127,6 @@ public class SecurityConfig {
                 .roles("ADMIN")
                 .build();
 
-
         if (tableResetFlag) {
             ClassPathResource resetSql = new ClassPathResource("sql/reset.sql");
             ClassPathResource createSql = new ClassPathResource("sql/initSecurityTable.sql");
