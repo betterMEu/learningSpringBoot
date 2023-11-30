@@ -2,8 +2,6 @@ package one.two.three.config;
 
 import jakarta.annotation.Resource;
 import one.two.three.components.security.accessDeniedHandler.CustomAccessDenied;
-import one.two.three.components.security.author.OpenPolicyAgentAuthorizationManager;
-import one.two.three.components.security.filter.TestFilter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.ApplicationEventPublisher;
@@ -23,7 +21,6 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.SessionManagementConfigurer;
-import org.springframework.security.config.core.GrantedAuthorityDefaults;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -32,7 +29,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.provisioning.UserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.access.intercept.AuthorizationFilter;
 import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.authentication.logout.HeaderWriterLogoutHandler;
@@ -127,10 +123,9 @@ public class SecurityConfig {
                 .roles("ADMIN")
                 .build();
 
-
         if (tableResetFlag) {
-            ClassPathResource resetSql = new ClassPathResource("sql/reset.sql");
-            ClassPathResource createSql = new ClassPathResource("sql/initSecurityTable.sql");
+            ClassPathResource resetSql = new ClassPathResource("db/data.sql");
+            ClassPathResource createSql = new ClassPathResource("db/schema.sql");
             try {
                 ScriptUtils.executeSqlScript(dataSource.getConnection(), resetSql);
                 ScriptUtils.executeSqlScript(dataSource.getConnection(), createSql);

@@ -20,7 +20,7 @@ app:
 init:
   flag:
     table:
-      security: true  # 重置数据表
+      security: false  # 重置数据表
 
 storage:
   location: D:\testFile
@@ -50,8 +50,8 @@ spring:
   ###################### 提供SQL初始化脚本 #####################
   sql:
     init:
-      schema-locations: classpath:db/schema-h2.sql  # schema代表表结构SQL
-      data-locations: classpath:db/data-h2.sql      # data代表表数据SQL
+      schema-locations: classpath:db/schema.sql  # schema代表表结构SQL
+      data-locations: classpath:db/data.sql      # data代表表数据SQL
   ###################### 启动配置 #####################
   main:
     banner-mode: console
