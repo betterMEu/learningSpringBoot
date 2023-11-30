@@ -1,9 +1,5 @@
 server:
   port: 9000
-  tomcat:
-    max-swallow-size: 100MB
-  undertow:
-    max-http-post-size: -1
 #  servlet:
 
 #    context-path: /test
@@ -14,6 +10,7 @@ server:
 
 ######################## 自定义配置  双@@中间是引用pom文件 ###################
 app:
+  random: "${random.value}"
   encoding: "@project.build.sourceEncoding@"
   java:
     version: "@java.version@"
@@ -79,4 +76,7 @@ mybatis-plus:
   configuration:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl # sql打印
 
+logging:
+  level:
+    root: info
 

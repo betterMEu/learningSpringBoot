@@ -5,8 +5,6 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import java.io.Serializable;
-
-import lombok.Builder;
 import lombok.Data;
 
 /**
@@ -15,8 +13,7 @@ import lombok.Data;
  */
 @TableName(value ="users")
 @Data
-@Builder
-public class User implements Serializable {
+public class Users implements Serializable {
     /**
      * 
      */
@@ -35,8 +32,11 @@ public class User implements Serializable {
     @TableField(value = "ENABLED")
     private Integer ENABLED;
 
+    /**
+     * 逻辑删除
+     */
     @TableField(value = "DELETED")
-    private String DELETED;
+    private Integer DELETED;
 
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
