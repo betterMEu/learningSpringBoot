@@ -1,5 +1,6 @@
 package one.two.three.config;
 
+import jakarta.annotation.Resource;
 import org.springframework.boot.availability.*;
 import org.springframework.context.annotation.Configuration;
 
@@ -10,13 +11,10 @@ import org.springframework.context.annotation.Configuration;
  * @Version: 1.0
  */
 @Configuration
-public class ApplicationObserver {
+public class ApplicationStatus {
 
-    private final ApplicationAvailability applicationAvailability;
-
-    public ApplicationObserver(ApplicationAvailability applicationAvailability) {
-        this.applicationAvailability = applicationAvailability;
-    }
+    @Resource
+    private ApplicationAvailability applicationAvailability;
 
     public String printApplicationState() {
         LivenessState livenessState = applicationAvailability.getState(LivenessState.class);

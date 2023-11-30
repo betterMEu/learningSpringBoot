@@ -1,9 +1,8 @@
 package one.two.three.controller;
 
 import jakarta.annotation.Resource;
-import one.two.three.config.ApplicationObserver;
+import one.two.three.config.ApplicationStatus;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
@@ -24,7 +23,7 @@ public class TestController {
     private String enCoding;
 
     @Resource
-    private ApplicationObserver applicationObserver;
+    private ApplicationStatus applicationObserver;
 
     @Resource
     private JdbcUserDetailsManager jdbcUserDetailsManager;
