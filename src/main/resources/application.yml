@@ -21,15 +21,8 @@ init:
 
 storage:
   location: D:\testFile
-############################################
 
-#logging:
-#  file:
-#    path: "logs/"
-#    name: "LearningSpringBootApplicationLogFile.log"
-#  level:
-#    root: debug
-#   org.springframework.web: "debug"
+
 
 ############################### SPRING ###################################
 spring:
