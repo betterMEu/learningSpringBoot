@@ -23,29 +23,17 @@ public class TestPropertyMeta {
     */
     private int age = 18;
 
-    @Setter
     private List<String> addresses = new ArrayList<>(Arrays.asList("a", "b", "c"));
 
-    @Setter
     private ContainerType containerType = ContainerType.SIMPLE;
 
-    // getters/setters ...
 
     public enum ContainerType {
-
         SIMPLE, DIRECT
-
     }
 
     private Map<String, Integer> contexts;
 
-    public void setContexts(Map<String, Integer> contexts) {
-        this.contexts = contexts;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
 
     @Deprecated
     @DeprecatedConfigurationProperty(replacement = "test.property.age", reason = "无用")
@@ -53,7 +41,4 @@ public class TestPropertyMeta {
         return age;
     }
 
-    public void setAge(int age) {
-        this.age = age;
-    }
 }
